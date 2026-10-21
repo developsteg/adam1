@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 //   vercel blob put "<chemin du .apk>" --access public --pathname app.apk --allow-overwrite
 const HOTE_APK = "y9w2zu8d426kqput.public.blob.vercel-storage.com";
 const LIEN_APK = `https://${HOTE_APK}/app.apk`;
-const SITE = "learn-english-with-mrs-ilhem.vercel.app";
+const SITE = "learn-english-with-mrs-ilhem.netlify.app";
 
 // Navigateurs intégrés aux applications (Facebook, Messenger, Instagram, TikTok...) :
 // ils ne savent pas télécharger un fichier .apk. On fait alors ouvrir le
