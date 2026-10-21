@@ -10,13 +10,12 @@ export const metadata: Metadata = {
   description: "Téléchargez l'application des parents : absences, documents, paiements et messages.",
 };
 
-// Adresse permanente du fichier .apk (Vercel Blob, store « app-parents »).
-// Le bouton pointe DIRECTEMENT dessus : aucune redirection, donc rien qu'un
-// navigateur (Facebook...) puisse garder en mémoire ou modifier.
-// Nouvelle version : remplacer le fichier à la même adresse avec
-//   vercel blob put "<chemin du .apk>" --access public --pathname app.apk --allow-overwrite
-const HOTE_APK = "y9w2zu8d426kqput.public.blob.vercel-storage.com";
-const LIEN_APK = `https://${HOTE_APK}/app.apk`;
+// Adresse permanente du fichier .apk : dernière release du dépôt public GitHub
+// « developsteg/mrs-ilhem-apk » (gratuit, sans limite de téléchargements).
+// Nouvelle version : sur GitHub, Releases > Edit > remplacer le fichier « app.apk »
+// (même nom, donc même adresse).
+const CHEMIN_APK = "github.com/developsteg/mrs-ilhem-apk/releases/latest/download/app.apk";
+const LIEN_APK = `https://${CHEMIN_APK}`;
 const SITE = "learn-english-with-mrs-ilhem.netlify.app";
 
 // Navigateurs intégrés aux applications (Facebook, Messenger, Instagram, TikTok...) :
@@ -29,7 +28,7 @@ function estNavigateurIntegre(ua: string) {
 // Lien qui demande à Android d'ouvrir le téléchargement dans Chrome.
 // Si Chrome n'est pas installé, on revient sur cette page (avec les explications).
 const LIEN_CHROME =
-  `intent://${HOTE_APK}/app.apk#Intent;scheme=https;package=com.android.chrome;` +
+  `intent://${CHEMIN_APK}#Intent;scheme=https;package=com.android.chrome;` +
   `S.browser_fallback_url=${encodeURIComponent(`https://${SITE}/application?externe=1`)};end`;
 
 const etapes = [
