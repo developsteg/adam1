@@ -72,7 +72,7 @@ export default function PageAbsences() {
 
   return (
     <>
-      <EnTetePage titre="Absences" description="Faites l'appel : les parents des élèves absents sont prévenus sur leur téléphone." />
+      <EnTetePage titre="Absences" description="Faites l'appel : les parents des élèves absents ou en retard sont prévenus sur leur téléphone." />
       <div className="space-y-6">
         <div className="grid grid-cols-[18rem_12rem] gap-4">
           <SelecteurClasse niveaux={niveaux} classes={classes} valeur={classeId} onChange={setClasseId} />
@@ -99,6 +99,8 @@ export default function PageAbsences() {
 function Appel({ classeId, date, onValide }: { classeId: string; date: string; onValide: () => void }) {
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [statuts, setStatuts] = useState<Record<string, Statut>>({});
+  // Statuts déjà enregistrés dans la base (pour ne renvoyer une notification que si le statut change)
+  const [enregistres, setEnregistres] = useState<Record<string, Statut>>({});
   const [dejaValide, setDejaValide] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [enCours, setEnCours] = useState(false);
@@ -123,11 +125,15 @@ function Appel({ classeId, date, onValide }: { classeId: string; date: string; o
 
     // Par défaut tout le monde est présent, sauf ce qui a déjà été enregistré
     const initial: Record<string, Statut> = {};
+    const dejaEnregistres: Record<string, Statut> = {};
     for (const eleve of listeEleves) {
-      initial[eleve.id] = presences.find((p) => p.eleve_id === eleve.id)?.statut ?? "present";
+      const enregistre = presences.find((p) => p.eleve_id === eleve.id)?.statut;
+      initial[eleve.id] = enregistre ?? "present";
+      if (enregistre) dejaEnregistres[eleve.id] = enregistre;
     }
     setEleves(listeEleves);
     setStatuts(initial);
+    setEnregistres(dejaEnregistres);
     setDejaValide(resSeance.data?.validee ?? false);
     setChargement(false);
   }, [classeId, date]);
@@ -154,20 +160,13 @@ function Appel({ classeId, date, onValide }: { classeId: string; date: string; o
       return;
     }
 
-    // 2) Enregistre la présence de chaque élève.
-    //    Un élève qui n'est plus absent pourra être notifié à nouveau s'il redevient absent.
-    const absents = eleves.filter((e) => statuts[e.id] === "absent");
-    const autres = eleves.filter((e) => statuts[e.id] !== "absent");
-    const lignesAbsents = absents.map((e) => ({ seance_id: seance.id, eleve_id: e.id, statut: "absent" }));
-    const lignesAutres = autres.map((e) => ({
-      seance_id: seance.id,
-      eleve_id: e.id,
-      statut: statuts[e.id],
-      notification_envoyee: false,
-    }));
-
-    for (const lignes of [lignesAbsents, lignesAutres]) {
-      if (lignes.length === 0) continue;
+    // 2) Enregistre la présence des élèves dont le statut est nouveau ou a changé.
+    //    Le statut qui change remet "notification_envoyee" à faux : le parent sera prévenu
+    //    du nouveau statut. Un statut inchangé n'est pas touché : pas de notification en double.
+    const lignes = eleves
+      .filter((e) => statuts[e.id] !== enregistres[e.id])
+      .map((e) => ({ seance_id: seance.id, eleve_id: e.id, statut: statuts[e.id], notification_envoyee: false }));
+    if (lignes.length > 0) {
       const { error } = await db().from("presences").upsert(lignes, { onConflict: "seance_id,eleve_id" });
       if (error) {
         setErreur(messageErreur(error));
@@ -175,15 +174,17 @@ function Appel({ classeId, date, onValide }: { classeId: string; date: string; o
         return;
       }
     }
+    setEnregistres({ ...statuts });
 
-    // 3) Notifications aux parents des absents (Edge Function)
+    // 3) Notifications aux parents des absents et des retardataires (Edge Function)
+    const aPrevenir = eleves.filter((e) => statuts[e.id] === "absent" || statuts[e.id] === "retard");
     let resume = "Appel enregistré.";
-    if (absents.length > 0) {
+    if (aPrevenir.length > 0) {
       const { data, error } = await db().functions.invoke("notifier-absences", { body: { seance_id: seance.id } });
       if (error) {
         resume += " Attention : les notifications n'ont pas pu être envoyées (" + (await messageErreurFonction(error)) + ")";
       } else if (data.envoyees === 0 && data.sans_application === 0) {
-        resume += " Les parents des absents avaient déjà été prévenus.";
+        resume += " Les parents des absents et des retardataires avaient déjà été prévenus.";
       } else {
         resume += ` ${data.envoyees} notification${data.envoyees > 1 ? "s" : ""} envoyée${data.envoyees > 1 ? "s" : ""}.`;
         if (data.sans_application > 0) {
@@ -370,7 +371,7 @@ function Historique({ classeId, version }: { classeId: string; version: number }
                 </span>
               </td>
               <td className="py-2.5 text-slate-600">
-                {l.statut === "absent" ? (l.notification_envoyee ? "Oui" : "Non") : "—"}
+                {l.notification_envoyee ? "Oui" : "Non"}
               </td>
             </tr>
           ))}

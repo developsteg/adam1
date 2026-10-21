@@ -8,6 +8,7 @@ import { messageErreur, messageErreurFonction } from "@/lib/erreurs";
 import type { Classe, DocumentPartage, Eleve, Niveau } from "@/lib/types";
 import { Alerte, Bouton, Carte, Champ, EnTetePage, Liste } from "@/components/ui";
 import SelecteurClasse from "@/components/SelecteurClasse";
+import SelecteurClassesMultiple from "@/components/SelecteurClassesMultiple";
 
 // Raccourci vers le client Supabase du navigateur
 const db = creerClientSupabase;
@@ -229,7 +230,7 @@ function FormulaireEnvoi({
 }) {
   const [titre, setTitre] = useState("");
   const [destination, setDestination] = useState<"classe" | "eleve">("classe");
-  const [classeId, setClasseId] = useState(classes[0]?.id ?? "");
+  const [classesIds, setClassesIds] = useState<string[]>(classes[0] ? [classes[0].id] : []);
   const [eleveId, setEleveId] = useState(eleves[0]?.id ?? "");
   const [fichier, setFichier] = useState<File | null>(null);
   const [enCours, setEnCours] = useState(false);
@@ -259,57 +260,93 @@ function FormulaireEnvoi({
       setErreur("Choisissez un fichier.");
       return;
     }
+    // Une cible par classe cochée (un document par classe), ou l'élève choisi
+    const cibles =
+      destination === "classe"
+        ? classesIds.map((id) => ({ nom: nomClasse(id), dossier: `classes/${id}`, classe_id: id, eleve_id: null }))
+        : [{ nom: "élève", dossier: `eleves/${eleveId}`, classe_id: null, eleve_id: eleveId }];
+    if (cibles.length === 0) {
+      setErreur("Cochez au moins une classe.");
+      return;
+    }
+
     setEnCours(true);
     setErreur("");
     setSucces("");
 
-    // 1) Envoi du fichier dans le bucket privé
-    const dossier = destination === "classe" ? `classes/${classeId}` : `eleves/${eleveId}`;
-    const chemin = `${dossier}/${Date.now()}-${nettoyerNomFichier(fichier.name)}`;
-    const { error: erreurEnvoi } = await db()
-      .storage.from("documents")
-      .upload(chemin, fichier, { contentType: fichier.type, upsert: false });
-    if (erreurEnvoi) {
-      setErreur("L'envoi du fichier a échoué : " + erreurEnvoi.message);
-      setEnCours(false);
-      return;
-    }
+    const nomFichier = `${Date.now()}-${nettoyerNomFichier(fichier.name)}`;
+    let premierChemin = ""; // fichier déjà envoyé : les autres classes en reçoivent une copie
+    let nbEnvoyes = 0;
+    let nbNotifications = 0;
+    let nbSansApplication = 0;
+    const echecs: string[] = [];
 
-    // 2) Enregistrement dans la table "documents"
-    const { data, error } = await db()
-      .from("documents")
-      .insert({
-        titre: titre.trim(),
-        fichier_chemin: chemin,
-        type: fichier.type,
-        taille: fichier.size,
-        classe_id: destination === "classe" ? classeId : null,
-        eleve_id: destination === "eleve" ? eleveId : null,
-      })
-      .select("id")
-      .single();
-    if (error || !data) {
-      // On retire le fichier pour ne pas laisser de fichier orphelin
-      await db().storage.from("documents").remove([chemin]);
-      setErreur(messageErreur(error));
-      setEnCours(false);
-      return;
-    }
+    for (const cible of cibles) {
+      const chemin = `${cible.dossier}/${nomFichier}`;
 
-    // 3) Notification aux parents concernés
-    let resume = `« ${titre.trim()} » a été envoyé.`;
-    const resultat = await db().functions.invoke("notifier-document", { body: { document_id: data.id } });
-    if (resultat.error) {
-      resume += " Attention : la notification n'a pas pu partir (" + (await messageErreurFonction(resultat.error)) + ")";
-    } else {
-      const { envoyees, sans_application } = resultat.data;
-      if (envoyees > 0) resume += ` ${envoyees} notification${envoyees > 1 ? "s" : ""} envoyée${envoyees > 1 ? "s" : ""}.`;
-      if (sans_application > 0) {
-        resume += ` ${sans_application} parent${sans_application > 1 ? "s n'ont" : " n'a"} pas encore l'application.`;
+      // 1) Fichier dans le bucket privé : envoi pour la première classe, copie (côté serveur) pour les suivantes
+      const { error: erreurEnvoi } = premierChemin
+        ? await db().storage.from("documents").copy(premierChemin, chemin)
+        : await db().storage.from("documents").upload(chemin, fichier, { contentType: fichier.type, upsert: false });
+      if (erreurEnvoi) {
+        echecs.push(`${cible.nom} : ${erreurEnvoi.message}`);
+        continue;
+      }
+      if (!premierChemin) premierChemin = chemin;
+
+      // 2) Enregistrement dans la table "documents"
+      const { data, error } = await db()
+        .from("documents")
+        .insert({
+          titre: titre.trim(),
+          fichier_chemin: chemin,
+          type: fichier.type,
+          taille: fichier.size,
+          classe_id: cible.classe_id,
+          eleve_id: cible.eleve_id,
+        })
+        .select("id")
+        .single();
+      if (error || !data) {
+        // On retire le fichier pour ne pas laisser de fichier orphelin
+        await db().storage.from("documents").remove([chemin]);
+        if (chemin === premierChemin) premierChemin = "";
+        echecs.push(`${cible.nom} : ${messageErreur(error)}`);
+        continue;
+      }
+      nbEnvoyes++;
+
+      // 3) Notification aux parents concernés
+      const resultat = await db().functions.invoke("notifier-document", { body: { document_id: data.id } });
+      if (resultat.error) {
+        echecs.push(`${cible.nom} : notification non envoyée (${await messageErreurFonction(resultat.error)})`);
+      } else {
+        nbNotifications += resultat.data.envoyees;
+        nbSansApplication += resultat.data.sans_application;
       }
     }
 
-    setSucces(resume);
+    let resume = "";
+    if (nbEnvoyes > 0) {
+      resume = `« ${titre.trim()} » a été envoyé`;
+      if (destination === "classe") resume += ` à ${nbEnvoyes} classe${nbEnvoyes > 1 ? "s" : ""}`;
+      resume += ".";
+      if (nbNotifications > 0) {
+        resume += ` ${nbNotifications} notification${nbNotifications > 1 ? "s" : ""} envoyée${nbNotifications > 1 ? "s" : ""}.`;
+      }
+      if (nbSansApplication > 0) {
+        resume += ` ${nbSansApplication} parent${nbSansApplication > 1 ? "s n'ont" : " n'a"} pas encore l'application.`;
+      }
+    }
+    if (echecs.length > 0) setErreur("Problème pour : " + echecs.join(" ; "));
+    if (resume) setSucces(resume);
+
+    // Le formulaire est vidé seulement si tout est parti ; sinon on peut réessayer
+    if (echecs.length > 0) {
+      setEnCours(false);
+      onEnvoye();
+      return;
+    }
     setTitre("");
     setFichier(null);
     if (champFichier.current) champFichier.current.value = "";
@@ -338,11 +375,11 @@ function FormulaireEnvoi({
           <Champ label="Titre" required maxLength={150} placeholder="ex : Examen n°1 – Unit 2" value={titre} onChange={(e) => setTitre(e.target.value)} />
         </div>
 
-        <div className="grid grid-cols-2 items-end gap-4">
-          <div className="flex gap-6 pb-2 text-sm">
+        <div className="grid grid-cols-2 items-start gap-4">
+          <div className="flex gap-6 pt-7 text-sm">
             <label className="flex items-center gap-2">
               <input type="radio" checked={destination === "classe"} onChange={() => setDestination("classe")} />
-              Toute une classe
+              Une ou plusieurs classes
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -355,7 +392,7 @@ function FormulaireEnvoi({
             </label>
           </div>
           {destination === "classe" ? (
-            <SelecteurClasse niveaux={niveaux} classes={classes} valeur={classeId} onChange={setClasseId} />
+            <SelecteurClassesMultiple niveaux={niveaux} classes={classes} valeur={classesIds} onChange={setClassesIds} />
           ) : (
             <Liste label="Élève" value={eleveId} onChange={(e) => setEleveId(e.target.value)}>
               {eleves.map((el) => (
@@ -367,7 +404,7 @@ function FormulaireEnvoi({
           )}
         </div>
 
-        <Bouton type="submit" disabled={enCours || !fichier}>
+        <Bouton type="submit" disabled={enCours || !fichier || (destination === "classe" && classesIds.length === 0)}>
           {enCours ? "Envoi en cours..." : "Envoyer le document"}
         </Bouton>
       </form>

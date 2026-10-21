@@ -19,7 +19,7 @@ export default function AccueilParent() {
     }
     const { data } = await creerClientSupabase()
       .from("emplois_du_temps")
-      .select("id, classe_id, jour, heure_debut, heure_fin, matiere")
+      .select("id, classe_id, jour, heure_debut, heure_fin")
       .eq("classe_id", enfant.classe_id)
       .order("jour")
       .order("heure_debut");
@@ -86,7 +86,6 @@ export default function AccueilParent() {
                         <span className="min-w-28 text-sm font-bold text-indigo-600">
                           {heure(c.heure_debut)} – {heure(c.heure_fin)}
                         </span>
-                        <span className="text-slate-900">{c.matiere}</span>
                       </div>
                     ))}
                 </CarteParent>

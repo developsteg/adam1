@@ -37,7 +37,6 @@ export type Creneau = {
   jour: number; // 1 = lundi ... 7 = dimanche
   heure_debut: string; // "14:00:00"
   heure_fin: string;
-  matiere: string;
 };
 
 export type Programme = {

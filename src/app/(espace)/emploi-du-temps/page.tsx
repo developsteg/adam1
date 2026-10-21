@@ -166,10 +166,9 @@ export default function PageEmploiDuTemps() {
                       title="Cliquer pour modifier"
                       className="block w-full rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-2 text-left transition hover:border-indigo-300"
                     >
-                      <p className="text-xs font-medium text-indigo-700">
+                      <p className="text-sm font-semibold text-indigo-700">
                         {heure(creneau.heure_debut)} – {heure(creneau.heure_fin)}
                       </p>
-                      <p className="mt-0.5 text-sm font-semibold text-slate-800">{creneau.matiere}</p>
                     </button>
                   ))}
                 </div>
@@ -209,7 +208,6 @@ function FormulaireCreneau({
   const [jour, setJour] = useState(creneau?.jour ?? jourParDefaut);
   const [debut, setDebut] = useState(creneau ? heure(creneau.heure_debut) : "14:00");
   const [fin, setFin] = useState(creneau ? heure(creneau.heure_fin) : "15:30");
-  const [matiere, setMatiere] = useState(creneau?.matiere ?? "");
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
 
@@ -228,13 +226,14 @@ function FormulaireCreneau({
     );
     if (chevauchement) {
       setErreur(
-        `Ce créneau chevauche « ${chevauchement.matiere} » (${heure(chevauchement.heure_debut)} – ${heure(chevauchement.heure_fin)}).`
+        `Ce créneau chevauche celui de ${heure(chevauchement.heure_debut)} à ${heure(chevauchement.heure_fin)}.`
       );
       return;
     }
 
     setEnCours(true);
-    const donnees = { classe_id: classeId, jour, heure_debut: debut, heure_fin: fin, matiere: matiere.trim() };
+    // La matière (anglais) se remplit toute seule dans la base
+    const donnees = { classe_id: classeId, jour, heure_debut: debut, heure_fin: fin };
     const { error } = creneau
       ? await db().from("emplois_du_temps").update(donnees).eq("id", creneau.id)
       : await db().from("emplois_du_temps").insert(donnees);
@@ -244,23 +243,23 @@ function FormulaireCreneau({
       setErreur(messageErreur(error));
       return;
     }
-    const nouveau = `${JOURS[jour - 1]} de ${debut} à ${fin} (${matiere.trim()})`;
+    const nouveau = `${JOURS[jour - 1]} de ${debut} à ${fin}`;
     onEnregistre(
       creneau
-        ? `La séance du ${JOURS[creneau.jour - 1].toLowerCase()} de ${heure(creneau.heure_debut)} à ${heure(creneau.heure_fin)} (${creneau.matiere}) a lieu désormais le ${nouveau.charAt(0).toLowerCase() + nouveau.slice(1)}.`
+        ? `La séance du ${JOURS[creneau.jour - 1].toLowerCase()} de ${heure(creneau.heure_debut)} à ${heure(creneau.heure_fin)} a lieu désormais le ${nouveau.charAt(0).toLowerCase() + nouveau.slice(1)}.`
         : `Nouvelle séance : ${nouveau.charAt(0).toLowerCase() + nouveau.slice(1)}.`
     );
   }
 
   async function supprimer() {
-    if (!creneau || !confirm(`Supprimer le créneau « ${creneau.matiere} » ?`)) return;
+    if (!creneau || !confirm(`Supprimer le créneau du ${JOURS[creneau.jour - 1].toLowerCase()} de ${heure(creneau.heure_debut)} à ${heure(creneau.heure_fin)} ?`)) return;
     const { error } = await db().from("emplois_du_temps").delete().eq("id", creneau.id);
     if (error) {
       setErreur(messageErreur(error));
       return;
     }
     onEnregistre(
-      `La séance du ${JOURS[creneau.jour - 1].toLowerCase()} de ${heure(creneau.heure_debut)} à ${heure(creneau.heure_fin)} (${creneau.matiere}) est supprimée de l'emploi du temps.`
+      `La séance du ${JOURS[creneau.jour - 1].toLowerCase()} de ${heure(creneau.heure_debut)} à ${heure(creneau.heure_fin)} est supprimée de l'emploi du temps.`
     );
   }
 
@@ -268,7 +267,7 @@ function FormulaireCreneau({
     <Carte titre={creneau ? "Modifier le créneau" : "Nouveau créneau"}>
       <form onSubmit={enregistrer} className="space-y-4">
         {erreur && <Alerte type="erreur">{erreur}</Alerte>}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <Liste label="Jour" value={jour} onChange={(e) => setJour(Number(e.target.value))}>
             {JOURS.map((nom, i) => (
               <option key={nom} value={i + 1}>
@@ -278,14 +277,6 @@ function FormulaireCreneau({
           </Liste>
           <Champ label="Début" type="time" required value={debut} onChange={(e) => setDebut(e.target.value)} />
           <Champ label="Fin" type="time" required value={fin} onChange={(e) => setFin(e.target.value)} />
-          <Champ
-            label="Matière"
-            required
-            maxLength={60}
-            placeholder="ex : Anglais"
-            value={matiere}
-            onChange={(e) => setMatiere(e.target.value)}
-          />
         </div>
         <div className="flex justify-between">
           <div className="flex gap-2">
