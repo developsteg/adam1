@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Couleurs du logo "Learn English with Mrs Ilhem" :
+   bleu marine (on remplace la palette "indigo" utilisée partout) et doré. */
+@theme {
+  --color-indigo-50: #eef2f9;
+  --color-indigo-100: #dce4f1;
+  --color-indigo-200: #b9c8e2;
+  --color-indigo-300: #8ea4c9;
+  --color-indigo-400: #5f7aa8;
+  --color-indigo-500: #3d5a8c;
+  --color-indigo-600: #1f3a68;
+  --color-indigo-700: #122a4e;
+  --color-indigo-800: #0e2140;
+  --color-indigo-900: #0a1830;
+
+  --color-or-100: #f6ecd9;
+  --color-or-300: #dcc08d;
+  --color-or-500: #c39b56;
+  --color-or-700: #8f6f35;
+}
+
+/* Interface claire uniquement (pensée pour un PC de bureau) */
+body {
+  background: #f8fafc; /* slate-50 */
+  color: #0f172a; /* slate-900 */
+}

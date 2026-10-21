@@ -1,0 +1,8 @@
+# Réglages Netlify (hébergement gratuit du dashboard web).
+# Le module Next.js est installé dans le projet (devDependencies) : Netlify n'a pas
+# besoin de l'installer lui-même, ce que les versions récentes de npm refusent.
+[build.environment]
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
