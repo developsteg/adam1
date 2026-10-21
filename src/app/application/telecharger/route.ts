@@ -5,10 +5,10 @@
 // n'importe quel navigateur.
 //
 // Nouvelle version de l'application : après le build EAS, sur GitHub,
-// Releases > Edit > remplacer le fichier « app.apk » (même nom, même adresse).
+// Releases > Edit > remplacer le fichier « learn-english-mrs-ilhem.apk » (même nom, même adresse).
 import { NextResponse } from "next/server";
 
-const LIEN_APK = "https://github.com/developsteg/mrs-ilhem-apk/releases/latest/download/app.apk";
+const LIEN_APK = "https://github.com/developsteg/mrs-ilhem-apk/releases/latest/download/learn-english-mrs-ilhem.apk";
 
 // Pas de mise en cache de la redirection elle-même.
 export const dynamic = "force-dynamic";

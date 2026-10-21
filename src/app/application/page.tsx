@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 
 // Adresse permanente du fichier .apk : dernière release du dépôt public GitHub
 // « developsteg/mrs-ilhem-apk » (gratuit, sans limite de téléchargements).
-// Nouvelle version : sur GitHub, Releases > Edit > remplacer le fichier « app.apk »
-// (même nom, donc même adresse).
-const CHEMIN_APK = "github.com/developsteg/mrs-ilhem-apk/releases/latest/download/app.apk";
+// Nouvelle version : sur GitHub, Releases > Edit > remplacer le fichier
+// « learn-english-mrs-ilhem.apk » (même nom, donc même adresse).
+const CHEMIN_APK = "github.com/developsteg/mrs-ilhem-apk/releases/latest/download/learn-english-mrs-ilhem.apk";
 const LIEN_APK = `https://${CHEMIN_APK}`;
 const SITE = "learn-english-with-mrs-ilhem.netlify.app";
 
