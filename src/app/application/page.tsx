@@ -102,6 +102,15 @@ export default async function PageApplication() {
             </a>
             <p className="mt-2 text-xs text-slate-400">Pour téléphones Android</p>
 
+            {/* Sans téléchargement : l'espace parents s'ouvre dans n'importe quel navigateur */}
+            <a
+              href="/parents"
+              className="mt-4 inline-block rounded-xl border border-indigo-600 px-8 py-3 font-semibold text-indigo-700 transition hover:bg-indigo-50"
+            >
+              Ou ouvrir directement dans le navigateur
+            </a>
+            <p className="mt-2 text-xs text-slate-400">Aucune installation : Chrome, Safari, ordinateur…</p>
+
             {integre && (
               <div className="mx-auto mt-6 max-w-md rounded-xl border border-or-300 bg-or-100 p-4 text-left text-sm text-slate-700">
                 <p className="font-semibold text-indigo-700">Vous êtes dans Facebook / Messenger</p>

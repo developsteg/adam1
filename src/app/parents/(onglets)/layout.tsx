@@ -69,6 +69,14 @@ export default function LayoutOngletsParents({ children }: { children: React.Rea
         <Link href="/tableau-de-bord" className={`${styleBoutonParent} mt-8 block text-center`}>
           Aller au tableau de bord
         </Link>
+        {/* Permet de quitter le compte de l'enseignante pour se connecter avec un compte parent */}
+        <button
+          type="button"
+          onClick={() => creerClientSupabase().auth.signOut()}
+          className="mt-3 block w-full rounded-xl border border-slate-300 px-4 py-3 text-center font-semibold text-slate-700"
+        >
+          Se déconnecter (pour utiliser un compte parent)
+        </button>
       </PageConnexion>
     );
   }

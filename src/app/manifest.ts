@@ -13,6 +13,11 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#f8fafc",
     theme_color: "#122a4e",
     lang: "fr",
-    icons: [{ src: "/logo.png", sizes: "512x512", type: "image/png", purpose: "any" }],
+    // Chrome (Android) exige une icône 192 et une 512 pour proposer l'installation
+    icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
   };
 }
