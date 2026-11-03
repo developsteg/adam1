@@ -109,10 +109,13 @@ export default function LayoutOngletsParents({ children }: { children: React.Rea
       </header>
 
       {/* ---------- Contenu (place laissée pour la barre d'onglets) ---------- */}
-      <main className="mx-auto max-w-2xl px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-4">{children}</main>
+      <main className="mx-auto max-w-2xl px-4 pb-[calc(8.5rem+env(safe-area-inset-bottom))] pt-4">{children}</main>
 
-      {/* ---------- Barre d'onglets ---------- */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
+      {/* ---------- Barre d'onglets ----------
+          Les 3,5 rem du bas restent vides : le badge « Powered by Netlify » (hébergement gratuit)
+          s'y affiche, sans cacher les onglets. Si ce badge disparaît (plan payant), mettre 0 ici,
+          dans le <main> (8.5rem -> 5rem) et dans messages/page.tsx (7.25rem -> 3.75rem). */}
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
         <div className="mx-auto grid max-w-2xl grid-cols-5">
           {ONGLETS.map((o) => {
             const actif = o.href === "/parents" ? chemin === "/parents" : chemin.startsWith(o.href);

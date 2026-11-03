@@ -117,7 +117,7 @@ export default function MessagesParent() {
       {/* ---------- Zone d'écriture (au-dessus de la barre d'onglets) ---------- */}
       <form
         onSubmit={envoyer}
-        className="fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-10 border-t border-slate-200 bg-white p-2.5"
+        className="fixed inset-x-0 bottom-[calc(7.25rem+env(safe-area-inset-bottom))] z-10 border-t border-slate-200 bg-white p-2.5"
       >
         <div className="mx-auto max-w-2xl">
           {erreur && <p className="mb-1.5 text-sm text-red-600">{erreur}</p>}
