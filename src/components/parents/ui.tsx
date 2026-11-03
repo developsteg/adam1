@@ -39,10 +39,25 @@ export function EnteteMarque({ sousTitre }: { sousTitre: string }) {
   );
 }
 
+// Bande de la couleur du fond, posée en bas à droite par-dessus le badge « Powered by Netlify »
+// (ajouté par l'hébergement gratuit, coin bas droit : 3,5 rem de haut). À supprimer si le badge
+// est désactivé dans Netlify (plan payant).
+export function BandeBadgeNetlify({ fond }: { fond: "blanc" | "gris" }) {
+  return (
+    <div
+      aria-hidden
+      className={`fixed bottom-0 right-0 z-[2147483647] h-14 w-56 ${fond === "blanc" ? "bg-white" : "bg-slate-50"}`}
+    />
+  );
+}
+
 // Page centrée des écrans de connexion / inscription
 export function PageConnexion({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">{children}</main>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
+      {children}
+      <BandeBadgeNetlify fond="gris" />
+    </main>
   );
 }
 

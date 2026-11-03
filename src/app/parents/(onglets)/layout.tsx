@@ -15,7 +15,7 @@ import { useMessagesTempsReel } from "@/lib/useMessagesTempsReel";
 import ChoixEnfant from "@/components/parents/ChoixEnfant";
 import EnAttente from "@/components/parents/EnAttente";
 import ChangerMotDePasse from "@/components/parents/ChangerMotDePasse";
-import { Chargement, EnteteMarque, PageConnexion, styleBoutonParent } from "@/components/parents/ui";
+import { BandeBadgeNetlify, Chargement, EnteteMarque, PageConnexion, styleBoutonParent } from "@/components/parents/ui";
 
 const ONGLETS = [
   { href: "/parents", label: "Accueil", icone: "🏠" },
@@ -113,8 +113,9 @@ export default function LayoutOngletsParents({ children }: { children: React.Rea
 
       {/* ---------- Barre d'onglets ----------
           Les 3,5 rem du bas restent vides : le badge « Powered by Netlify » (hébergement gratuit)
-          s'y affiche, sans cacher les onglets. Si ce badge disparaît (plan payant), mettre 0 ici,
-          dans le <main> (8.5rem -> 5rem) et dans messages/page.tsx (7.25rem -> 3.75rem). */}
+          s'y affiche, recouvert par <BandeBadgeNetlify />, sans cacher les onglets. Si ce badge disparaît
+          (plan payant), retirer la bande, mettre 0 ici, dans le <main> (8.5rem -> 5rem) et dans
+          messages/page.tsx (7.25rem -> 3.75rem). */}
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
         <div className="mx-auto grid max-w-2xl grid-cols-5">
           {ONGLETS.map((o) => {
@@ -139,6 +140,7 @@ export default function LayoutOngletsParents({ children }: { children: React.Rea
           })}
         </div>
       </nav>
+      <BandeBadgeNetlify fond="blanc" />
     </div>
   );
 }
